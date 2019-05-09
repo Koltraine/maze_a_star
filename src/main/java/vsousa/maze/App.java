@@ -1,34 +1,32 @@
-package vsousa.maze.solver;
+package vsousa.maze;
 
 import java.awt.BorderLayout;
 import java.awt.Canvas;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
-import java.util.Map;
 
 import javax.swing.JFrame;
 
+import vsousa.maze.generator.Board;
 import vsousa.maze.generator.Generator;
+import vsousa.maze.solver.Solver;
 import vsousa.maze.ui.MazePanel;
 
 public class App extends Canvas implements Runnable {
 	
 	private static final String NAME = "Maze A*";
 	private static final int WIND_SIZE = 1000;
-	private static final int MAZE_SIZE = 10;
-	private static final int MARG_SIZE = 2;
+	private static final int MAZE_SIZE = 100;
 	private static final long serialVersionUID = 1L;
-	private final static Dimension dim = new Dimension( WIND_SIZE, WIND_SIZE);
-	private final static double NS_PER_UPDATE = 1000000000D/60;
+	private static final Dimension dim = new Dimension( WIND_SIZE, WIND_SIZE);
+	private static final double NS_PER_UPDATE = 1000000000D/60;
 	
 	private boolean running = false;
-	private int width;
-	private int height;
 	private JFrame frame;
 	private MazePanel mp;
-	
+	private Generator gen = new Generator(MAZE_SIZE);
+	private Solver solver;
 	
 	public App() {
 		setMinimumSize( dim );
@@ -44,13 +42,7 @@ public class App extends Canvas implements Runnable {
 		frame.setLocationRelativeTo( null );
 		frame.setVisible( true );
 		
-		
-		width = getWidth();
-		height = getHeight();
-		
-		
-		
-		mp = new MazePanel(WIND_SIZE, MAZE_SIZE, MARG_SIZE, Generator.generateMaze(MAZE_SIZE));
+		mp = new MazePanel(WIND_SIZE, gen.getBoard());
 	}
 	
 	public synchronized void start() {
@@ -90,7 +82,18 @@ public class App extends Canvas implements Runnable {
 		}
 	}
 	
-	private void update() {}
+	private void update() {
+		if(!gen.done()) {
+			gen.step();
+		} else {
+			if (solver == null) {
+				solver = new Solver(gen.getBoard().getCell(MAZE_SIZE-1, MAZE_SIZE-1), gen.getBoard());
+			}
+			if(!solver.done()) {
+				solver.step();
+			}
+		}
+	}
 	
 	private void render() {
 		BufferStrategy bs = this.getBufferStrategy();
@@ -100,7 +103,6 @@ public class App extends Canvas implements Runnable {
 		}
 		Graphics g = bs.getDrawGraphics();
 
-		
 		mp.render(g);
 		
 		g.dispose();
